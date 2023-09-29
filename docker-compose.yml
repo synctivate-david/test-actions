@@ -1,0 +1,36 @@
+version: '3.7'
+
+services:
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - production_static_data:/app/static-root
+    entrypoint: /app/entrypoint.sh
+
+  proxy:
+    build:
+      context: ./proxy
+    volumes:
+      - production_static_data:/vol/static
+      - ssl_certs:/etc/nginx/certs
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ssl_certs:/etc/letsencrypt
+    depends_on:
+      - proxy
+      - backend
+    # command to run when creating first certificate
+    command: certonly --webroot --webroot-path=/etc/letsencrypt --email contact@synctivate.com --agree-tos --no-eff-email --staging -d demo.synctivate.com
+    # command to run when renewing certificate
+    # command: renew --webroot --webroot-path=/etc/letsencrypt --email contact@synctivate.com --agree-tos --no-eff-email --staging
+
+volumes:
+  production_static_data:
+  ssl_certs:
